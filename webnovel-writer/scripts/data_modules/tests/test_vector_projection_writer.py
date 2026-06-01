@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """VectorProjectionWriter 单元测试。"""
+import pytest
+
 from data_modules.vector_projection_writer import VectorProjectionWriter
 
 
@@ -123,3 +125,38 @@ def test_rejected_commit_returns_not_applied():
     writer.project_root = None
     result = writer.apply({"meta": {"status": "rejected", "chapter": 1}})
     assert result["applied"] is False
+
+
+def test_collect_chunks_includes_summary_and_scenes():
+    writer = VectorProjectionWriter.__new__(VectorProjectionWriter)
+    payload = {
+        "meta": {"chapter": 47, "status": "accepted"},
+        "summary_text": "韩立在坊市发现丹方线索。",
+        "scenes": [
+            {"index": 1, "summary": "韩立入坊市观察摊位", "location": "坊市"},
+            {"scene_index": 2, "content": "陈巧倩暗中提醒韩立有人跟踪。"},
+        ],
+        "accepted_events": [],
+        "entity_deltas": [],
+    }
+
+    chunks = writer._collect_chunks(payload)
+    by_type = {}
+    for chunk in chunks:
+        by_type.setdefault(chunk["chunk_type"], []).append(chunk)
+
+    assert by_type["summary"][0]["chunk_id"] == "ch0047_summary"
+    assert by_type["summary"][0]["parent_chunk_id"] is None
+    assert by_type["scene"][0]["parent_chunk_id"] == "ch0047_summary"
+    assert by_type["scene"][0]["content"].startswith("坊市：")
+    assert any(chunk["scene_index"] == 2 for chunk in by_type["scene"])
+
+
+@pytest.mark.asyncio
+async def test_run_store_coro_works_inside_active_event_loop():
+    writer = VectorProjectionWriter.__new__(VectorProjectionWriter)
+
+    async def store():
+        return 3
+
+    assert writer._run_store_coro(store()) == 3
