@@ -2,6 +2,7 @@
 name: webnovel-review
 description: 使用审查 Agent 评估章节质量，生成报告并写回审查指标。
 allowed-tools: Read Grep Write Edit Bash Agent AskUserQuestion
+argument-hint: "[章号或范围，如 5 或 1-5]"
 ---
 
 # Quality Review Skill

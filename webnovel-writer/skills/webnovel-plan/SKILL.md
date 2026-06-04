@@ -1,6 +1,8 @@
 ---
 name: webnovel-plan
 description: 基于总纲生成卷纲、时间线和章纲，并把新增设定增量写回现有设定集。
+allowed-tools: Read Write Edit Bash AskUserQuestion
+argument-hint: "[卷号，如 1]"
 ---
 
 # Outline Planning
@@ -280,20 +282,7 @@ cat "${SKILL_ROOT}/references/outlining/chapter-planning.md"
 
 #### 结构化节点规范
 
-节点格式统一为：
-
-`主体 | 动作/变化 | 对象/结果`
-
-说明：
-- 这里的节点是写作执行骨架，不追求严格语法学 SVO。
-- `动作/变化` 可以表示行动、判断、意识变化或状态转移。
-- `对象/结果` 可以是人、物、地点，也可以是结果状态。
-
-示例：
-- `萧炎 | 抵达 | 迦南学院入口`
-- `萧炎 | 展示 | 异火控制力`
-- `药老 | 对萧炎产生 | 明确兴趣`
-- `萧炎 | 意识到 | 学院考核远比预想更严苛`
+节点格式统一为 `主体 | 动作/变化 | 对象/结果`（写作执行骨架，不追求严格语法 SVO；格式说明与示例见 `references/outlining/chapter-planning.md` 的「结构化节点规范」）。
 
 结构规则：
 - 每章固定 `1 个 CBN`

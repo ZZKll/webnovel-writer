@@ -1,8 +1,9 @@
 ---
 name: deconstruction-agent
-description: Reference-book deconstruction agent for webnovel-init. Extracts transferable craft patterns without contaminating story canon.
+description: /webnovel-init 的参考书拆解子代理。抽取可迁移的创作模式与 init 候选，不污染新书 canon。
 tools: Read, Grep, Bash
 model: inherit
+color: purple
 ---
 
 # deconstruction-agent

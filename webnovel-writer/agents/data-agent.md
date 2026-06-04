@@ -3,6 +3,7 @@ name: data-agent
 description: 从正文提取事实，生成 commit artifacts。
 tools: Read, Write, Bash
 model: inherit
+color: green
 ---
 
 # data-agent

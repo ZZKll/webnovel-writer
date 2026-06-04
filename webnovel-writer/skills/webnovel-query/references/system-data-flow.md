@@ -9,6 +9,8 @@ purpose: 项目初始化和状态查询时加载，理解数据结构
 
 <instructions>
 
+> ⚠️ 本文件描述 `.webnovel/` 投影层数据结构与早期写作流程，供查询时理解 read-model。v6.0.0 写后主链已改为 Story System（`.story-system/` 合同树 + accepted `CHAPTER_COMMIT`）；下文「双 Agent 架构 / 每章数据链 / Data Agent 直接写入」等描述为历史流程，事实以 Story System 为准。
+
 ## 目录约定
 
 ```
@@ -19,7 +21,7 @@ purpose: 项目初始化和状态查询时加载，理解数据结构
 └── .webnovel/
     ├── state.json          # 精简状态 (< 5KB)：进度/主角/strand_tracker/消歧
     ├── index.db            # SQLite 主存储：实体/别名/关系/状态变化/章节/场景
-    ├── workflow_state.json # 工作流断点（用于 /webnovel-resume）
+    ├── workflow_state.json # 工作流断点（legacy；v6 写章主链改用 Story System chapter-commit）
     ├── vectors.db          # RAG 向量数据库
     ├── summaries/          # 章节摘要（chNNNN.md）
     └── archive/            # 归档数据（不活跃角色/已回收伏笔）
@@ -98,8 +100,8 @@ Context Agent (读) ←→ index.db + state.json ←→ Data Agent (写)
    → 2A 粗稿（纯正文）
    → 2B 风格适配（可选）
 
-4. 审查 (6 个 Agent 并行)
-   → 爽点/一致性/节奏/OOC/连贯性/追读力检查
+4. 审查（统一 reviewer agent）
+   → 设定一致性/时间线/叙事连贯/角色一致性/逻辑 五维度检查
    → 输出审查报告
 
 5. 网文化润色

@@ -3,6 +3,7 @@ name: context-agent
 description: 写前 research，输出写作任务书。
 tools: Read, Grep, Bash
 model: inherit
+color: blue
 ---
 
 # context-agent
@@ -59,14 +60,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "{project_root}" extr
 
 **硬约束**：每章必须有推进（目标/代价/关系变化至少一项）；上章有钩子本章必须回应；禁止占位正文。
 
-**Anti-AI 对抗**（必须在任务书第 4 段提醒）：
-- 删段末感悟句，留余味——你倾向写闭环
-- 删万能副词（缓缓/淡淡/微微），换具体动作
-- 情绪用生理反应+微动作，禁止"他感到X"
-- 对话带潜台词和意图冲突，有抢话、沉默、答非所问
-- 制造节奏疏密对比，有的段落只一句话
-- 章末禁止安全着陆，留未解决的问题
-- 展示后不解释
+**文风/反 AI**：本段不灌输 anti-AI 细则——文风与去 AI 味统一由写章 Step 4 润色阶段处理。任务书只给题材基调、节奏与本章情绪走向。
 
 ## 3. 执行流程
 
@@ -129,7 +123,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "{project_root}" extr
 每人一段：状态、驱动力、本章作用、说话倾向。
 
 ### 4. 怎么写更顺
-最关键的一段。翻译裁决层的风格/节奏为具体指导；题材基调；writing_guidance；anti_patterns 翻为自然提醒；审查得分趋势；Anti-AI 对抗提醒。
+最关键的一段。翻译裁决层的风格/节奏为具体指导；题材基调；writing_guidance；anti_patterns 翻为自然提醒；审查得分趋势。
 
 ### 5. 收在哪里
 结尾停在什么感觉，留什么未完感。

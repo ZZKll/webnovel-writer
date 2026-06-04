@@ -2,6 +2,7 @@
 name: webnovel-learn
 description: 从当前会话提取成功模式并写入 project_memory.json
 allowed-tools: Read Bash
+argument-hint: "[要记住的写作经验]"
 ---
 
 # /webnovel-learn
@@ -41,7 +42,7 @@ export PROJECT_ROOT="$(python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-roo
 
 ## 执行流程
 1. 读取 `"$PROJECT_ROOT/.webnovel/state.json"`，获取当前章节号（progress.current_chapter）
-2. 解析用户输入，归类 pattern_type（hook/pacing/dialogue/payoff/emotion/format/other）
+2. 解析用户输入（即 `/webnovel-learn` 后附带的经验文本；若为空则取本次对话中用户认可的写法），归类 pattern_type（hook/pacing/dialogue/payoff/emotion/format/other）
 3. 必须调用脚本写入，不得手写或拼接 JSON：
 
 ```bash

@@ -3,6 +3,7 @@ name: reviewer
 description: 统一审查 agent。逐维度检查正文的设定一致性、时间线、叙事连贯、角色一致性、逻辑，输出结构化问题清单。
 tools: Read, Grep, Bash
 model: inherit
+color: yellow
 ---
 
 # reviewer（统一审查 agent）
@@ -124,6 +125,8 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" ind
   "summary": "N个问题：X个阻断，Y个高优"
 }
 ```
+
+> `category` 取值规范：本 agent 只产出 5 个维度值（`setting`/`timeline`/`continuity`/`character`/`logic`）；schema 中的 `pacing`/`other` 仅为后端兼容枚举，本 agent 不主动产出。
 
 ## 9. 错误处理
 

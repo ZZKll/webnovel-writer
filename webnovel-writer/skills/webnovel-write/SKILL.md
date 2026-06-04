@@ -2,6 +2,7 @@
 name: webnovel-write
 description: 产出可发布章节，完整执行上下文→起草→审查→润色→提交→备份。
 allowed-tools: Read Write Edit Grep Bash Agent AskUserQuestion
+argument-hint: "[章号] [--fast|--minimal]"
 ---
 
 # 写章流程
@@ -116,7 +117,7 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" rev
 
 ### Step 4：润色
 
-加载 `polish-guide.md`、`typesetting.md`、`style-adapter.md`。
+加载 `references/polish-guide.md`、`references/writing/typesetting.md`、`references/style-adapter.md`。
 
 顺序：修复非 blocking issue → 风格适配 → 排版 → Anti-AI 终检。
 

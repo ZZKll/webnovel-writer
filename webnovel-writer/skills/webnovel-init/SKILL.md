@@ -2,6 +2,7 @@
 name: webnovel-init
 description: 深度初始化网文项目。通过分阶段交互收集完整创作信息，生成可直接进入规划与写作的项目骨架与约束文件。
 allowed-tools: Read Write Edit Grep Bash Agent AskUserQuestion WebSearch WebFetch
+argument-hint: "[书名或灵感（可选）]"
 ---
 
 # Project Initialization (Deep Mode)
@@ -14,7 +15,7 @@ allowed-tools: Read Write Edit Grep Bash Agent AskUserQuestion WebSearch WebFetc
 
 ## 执行原则
 
-1. 先收集，再生成；未过充分性闸门，不执行 `init_project.py`。
+1. 先收集，再生成；未过充分性闸门，不执行 `webnovel.py init`。
 2. 分波次提问，每轮只问"当前缺失且会阻塞下一步"的信息。
 3. 允许调用 `Read/Grep/Bash/Agent/AskUserQuestion/WebSearch/WebFetch` 辅助收集。
 4. 用户已明确的信息不重复问；冲突信息优先让用户裁决。
@@ -57,7 +58,7 @@ allowed-tools: Read Write Edit Grep Bash Agent AskUserQuestion WebSearch WebFetc
 ## 工具策略（按需）
 
 - `Read/Grep`：读取项目上下文与参考文件（`README.md`、`CLAUDE.md`、`templates/genres/*`、`references/*`）。
-- `Bash`：执行 `init_project.py`、文件存在性检查、最小验证命令。
+- `Bash`：执行 `webnovel.py init`、文件存在性检查、最小验证命令。
 - `Agent`：拆分并行子任务（如题材映射、约束包候选生成、文件验证）；Step 1.5 用户选择参考书拆解作为灵感来源时，调用 `webnovel-writer:deconstruction-agent`。
 - `AskUserQuestion`：用于关键分歧裁决、候选方案选择、最终确认。
 - `WebSearch`：用于检索最新市场趋势、平台风向、题材数据（可带域名过滤）。
@@ -230,67 +231,11 @@ Agent(
 
 ## 内部数据模型（初始化收集对象）
 
-```json
-{
-  "project": {
-    "title": "",
-    "genre": "",
-    "target_words": 0,
-    "target_chapters": 0,
-    "one_liner": "",
-    "core_conflict": "",
-    "target_reader": "",
-    "platform": ""
-  },
-  "protagonist": {
-    "name": "",
-    "desire": "",
-    "flaw": "",
-    "archetype": "",
-    "structure": "单主角"
-  },
-  "relationship": {
-    "heroine_config": "",
-    "heroine_names": [],
-    "heroine_role": "",
-    "co_protagonists": [],
-    "co_protagonist_roles": [],
-    "antagonist_tiers": {},
-    "antagonist_level": "",
-    "antagonist_mirror": ""
-  },
-  "golden_finger": {
-    "type": "",
-    "name": "",
-    "style": "",
-    "visibility": "",
-    "irreversible_cost": "",
-    "growth_rhythm": ""
-  },
-  "world": {
-    "scale": "",
-    "factions": "",
-    "power_system_type": "",
-    "social_class": "",
-    "resource_distribution": "",
-    "currency_system": "",
-    "currency_exchange": "",
-    "sect_hierarchy": "",
-    "cultivation_chain": "",
-    "cultivation_subtiers": ""
-  },
-  "constraints": {
-    "anti_trope": "",
-    "hard_constraints": [],
-    "core_selling_points": [],
-    "opening_hook": ""
-  }
-}
-```
+采集对象的完整字段结构见 `references/init-collection-schema.md`，按其中字段逐项收集；必填项以下方「充分性闸门」为准。
 
 ## 充分性闸门（必须通过）
 
-未满足以下条件前，禁止执行 `init_project.py`：
+未满足以下条件前，禁止执行 `webnovel.py init`：
 
 1. 书名、题材（可复合）已确定。
 2. 目标规模可计算（字数或章数至少一个）。
@@ -446,7 +391,7 @@ test "$(basename "${PROJECT_ROOT}")" = "${PROJECT_SLUG}"
 恢复流程：
 1. 仅补缺失字段，不全量重问。
 2. 仅重跑最小步骤：
-   - 文件缺失 -> 重跑 `init_project.py`；
+   - 文件缺失 -> 重跑 `webnovel.py init`；
    - 总纲缺字段 -> 只 patch 总纲；
    - idea_bank 不一致 -> 只重写该文件。
 3. 重新验证，全部通过后结束。

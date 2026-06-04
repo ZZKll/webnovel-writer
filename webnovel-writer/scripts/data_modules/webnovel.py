@@ -11,10 +11,10 @@ webnovel 统一入口（面向 skills / agents 的稳定 CLI）
 典型用法（推荐，不依赖 PYTHONPATH / 不要求 cd）：
   python "<SCRIPTS_DIR>/webnovel.py" preflight
   python "<SCRIPTS_DIR>/webnovel.py" where
-  python "<SCRIPTS_DIR>/webnovel.py" use D:\\wk\\xiaoshuo\\凡人资本论
-  python "<SCRIPTS_DIR>/webnovel.py" --project-root D:\\wk\\xiaoshuo index stats
-  python "<SCRIPTS_DIR>/webnovel.py" --project-root D:\\wk\\xiaoshuo state process-chapter --chapter 100 --data @payload.json
-  python "<SCRIPTS_DIR>/webnovel.py" --project-root D:\\wk\\xiaoshuo extract-context --chapter 100 --format json
+  python "<SCRIPTS_DIR>/webnovel.py" use "<PROJECT_ROOT>"
+  python "<SCRIPTS_DIR>/webnovel.py" --project-root "<PROJECT_ROOT>" index stats
+  python "<SCRIPTS_DIR>/webnovel.py" --project-root "<PROJECT_ROOT>" state process-chapter --chapter 100 --data @payload.json
+  python "<SCRIPTS_DIR>/webnovel.py" --project-root "<PROJECT_ROOT>" extract-context --chapter 100 --format json
 
 也支持（不推荐，容易踩 PYTHONPATH/cd/参数顺序坑）：
   python -m data_modules.webnovel where
