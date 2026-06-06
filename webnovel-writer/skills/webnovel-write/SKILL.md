@@ -17,7 +17,7 @@ argument-hint: "[章号] [--fast|--minimal]"
 |------|------|
 | 默认 | Step 1→2→3→4→5→6 |
 | `--fast` | Step 1→2→3(轻量)→4→5→6 |
-| `--minimal` | Step 1→2→4(仅排版)→5→6 |
+| `--minimal` | Step 1→2→3(写 no-review artifact)→4(仅排版)→5→6 |
 
 ## 硬规则
 
@@ -125,7 +125,13 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" rev
   --save-metrics
 ```
 
-审查只跑一轮，reviewer 只调用一次。`blocking=true` 的问题在不改剧情、不破设定的前提下定点修复后直接进 Step 4，不重新调用 reviewer；确实无法修复的 blocking 问题用 `AskUserQuestion` 让用户裁决（接受当前版本 / 手动修复 / 放弃）。非 blocking issue 交给 Step 4 处理。`--fast` 只检查 setting/timeline/continuity。`--minimal` 跳过。
+审查只跑一轮，reviewer 只调用一次。`blocking=true` 的问题在不改剧情、不破设定的前提下定点修复后直接进 Step 4，不重新调用 reviewer；确实无法修复的 blocking 问题用 `AskUserQuestion` 让用户裁决（接受当前版本 / 手动修复 / 放弃）。非 blocking issue 交给 Step 4 处理。`--fast` 只检查 setting/timeline/continuity。
+
+`--minimal` 不调用 reviewer 与 `review-pipeline`，但必须**覆盖写入**本章新的 no-review `review_results.json`（禁止复用旧 artifact），使 Step 5 提交链有有效 `--review-result`（成功标准“审查已落库”对 `--minimal` 的豁免仍成立）：
+
+```bash
+python -X utf8 -c "import json,os; from pathlib import Path; root=Path(os.environ['PROJECT_ROOT']); ch=int('{chapter_num}'); p=root/'.webnovel'/'tmp'/'review_results.json'; p.parent.mkdir(parents=True,exist_ok=True); p.write_text(json.dumps({'chapter':ch,'issues':[],'issues_count':0,'blocking_count':0,'has_blocking':False,'summary':'minimal mode: reviewer skipped by user-selected --minimal flow','review_skipped':True,'review_mode':'minimal'},ensure_ascii=False,indent=2),encoding='utf-8')"
+```
 
 ### Step 4：润色
 
