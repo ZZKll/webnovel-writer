@@ -612,3 +612,46 @@ def test_plan_skill_covers_outline_writeback_and_state_sync_contract():
     cmds = _extract_cli_subcommands(text)
     assert "master-outline-sync" in cmds, "plan 缺少 master-outline-sync 写回命令"
     assert "update-state" in cmds, "plan 缺少 update-state 状态更新命令"
+
+
+# ---------------------------------------------------------------------------
+# 8. B 类跨层新契约（plan §5.2-B / §4.5 写入所有权矩阵）
+#    tools↔落盘一致性现状已满足 → 作通过型守护；
+#    提交前只读 git diff 变更面校验现状缺失 → xfail，Task 5（Phase 1）落地后移除标记转正。
+# ---------------------------------------------------------------------------
+
+def _agent_tools(agent_name: str) -> list[str]:
+    """解析某 agent frontmatter 的 tools 列表。"""
+    fm = _extract_frontmatter(_read_text(AGENTS_DIR / f"{agent_name}.md"))
+    return [t.strip() for t in fm.get("tools", "").split(",") if t.strip()]
+
+
+# B 类红线（写入所有权 ↔ tools 一致，单一写入者）：
+# data-agent 是三份 tmp artifact 的唯一写入者 → 必须持 Write；
+# reviewer/context-agent/deconstruction-agent 只返回结果、由主流程落盘 → 不得持 Write。
+def test_agent_write_ownership_matches_tools_frontmatter():
+    """红线（写入所有权）：仅 data-agent 持 Write，其余三个 agent 不持 Write。"""
+    assert "Write" in _agent_tools("data-agent"), (
+        "data-agent 必须持有 Write（它是三份 tmp artifact 的唯一写入者）"
+    )
+    for agent_name in ("reviewer", "context-agent", "deconstruction-agent"):
+        assert "Write" not in _agent_tools(agent_name), (
+            f"{agent_name} 不得持有 Write（它只返回结果，由主流程落盘）"
+        )
+
+
+# B 类红线（提交前变更面校验）：write SKILL 在 chapter-commit 前必须执行只读 git diff 变更面校验。
+# 现状 write SKILL 尚无此步 → 标 xfail；Task 5（Phase 1）实现后移除本标记，转为硬守护。
+@pytest.mark.xfail(
+    reason="B 类新契约：提交前只读 git diff 变更面校验由 Phase 1 (Task 5) 落地，落地后移除本标记",
+    strict=False,
+)
+def test_write_skill_has_readonly_git_diff_change_surface_check():
+    """红线（提交前变更面校验）：write SKILL 在 chapter-commit 前执行只读 git diff 校验。"""
+    text = _read_text(SKILLS_DIR / "webnovel-write" / "SKILL.md")
+    assert "git diff --name-status" in text, (
+        "write SKILL 缺少提交前只读 git diff --name-status 变更面校验"
+    )
+    assert "git diff --check" in text, (
+        "write SKILL 缺少 git diff --check 空白/冲突标记校验"
+    )
