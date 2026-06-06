@@ -42,6 +42,10 @@ def test_commit_service_accepts_when_all_checks_pass(tmp_path):
     assert payload["contract_refs"]["volume"] == "volume_001.json"
     assert payload["contract_refs"]["chapter"] == "chapter_003.json"
     assert payload["outline_snapshot"]["covered_nodes"] == ["发现陷阱"]
+    assert payload["extraction_result"]["accepted_events"] == []
+    assert "accepted_events" not in payload
+    assert "state_deltas" not in payload
+    assert "entity_deltas" not in payload
 
 
 def test_commit_service_includes_volume_ref_and_write_fact_provenance(tmp_path):
@@ -236,11 +240,12 @@ def test_commit_service_normalizes_accepted_events_before_projection(tmp_path):
         },
     )
 
-    event = payload["accepted_events"][0]
+    event = payload["extraction_result"]["accepted_events"][0]
     assert event["event_id"].startswith("evt-ch076-001-")
     assert event["chapter"] == 76
     assert event["event_type"] == "open_loop_created"
     assert event["subject"] == "xiaoyan"
+    assert "accepted_events" not in payload
 
 
 def test_apply_projections_normalizes_events_before_router_inspection(
@@ -250,7 +255,7 @@ def test_apply_projections_normalizes_events_before_router_inspection(
 
     class SpyRouter:
         def required_writers(self, payload):
-            captured["events"] = list(payload.get("accepted_events") or [])
+            captured["events"] = list(payload.get("extraction_result", {}).get("accepted_events") or [])
             return []
 
     monkeypatch.setattr(
@@ -261,15 +266,18 @@ def test_apply_projections_normalizes_events_before_router_inspection(
     service = ChapterCommitService(tmp_path)
     payload = {
         "meta": {"status": "accepted", "chapter": 76},
-        "accepted_events": [
-            {
-                "type": "scene_open",
-                "characters": ["xiaoyan"],
-                "payload": {"content": "萧炎推开石门，新的悬念出现"},
-            }
-        ],
-        "entity_deltas": [],
-        "summary_text": "",
+        "extraction_result": {
+            "accepted_events": [
+                {
+                    "type": "scene_open",
+                    "characters": ["xiaoyan"],
+                    "payload": {"content": "萧炎推开石门，新的悬念出现"},
+                }
+            ],
+            "state_deltas": [],
+            "entity_deltas": [],
+            "summary_text": "",
+        },
         "projection_status": {
             "state": "pending",
             "index": "pending",
@@ -286,7 +294,7 @@ def test_apply_projections_normalizes_events_before_router_inspection(
     assert event["chapter"] == 76
     assert event["event_type"] == "open_loop_created"
     assert event["subject"] == "xiaoyan"
-    assert payload["accepted_events"] == captured["events"]
+    assert payload["extraction_result"]["accepted_events"] == captured["events"]
 
 
 def test_apply_projections_updates_state_for_rejected_commit(tmp_path):

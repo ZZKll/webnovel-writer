@@ -10,6 +10,8 @@ from collections.abc import Coroutine
 from pathlib import Path
 from typing import Any, Dict, List
 
+from .commit_artifacts import extraction_list, extraction_text
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +47,7 @@ class VectorProjectionWriter:
 
         chunk_counts: Dict[str, int] = {}
 
-        summary_text = str(commit_payload.get("summary_text") or "").strip()
+        summary_text = extraction_text(commit_payload, "summary_text")
         summary_chunk_id = f"ch{chapter:04d}_summary" if chapter > 0 else ""
         if chapter > 0 and summary_text:
             chunks.append({
@@ -58,7 +60,7 @@ class VectorProjectionWriter:
                 "source_file": f"commit:chapter_{chapter:03d}",
             })
 
-        for event in commit_payload.get("accepted_events") or []:
+        for event in extraction_list(commit_payload, "accepted_events"):
             if not isinstance(event, dict):
                 continue
             text = self._event_to_text(event)
@@ -76,7 +78,7 @@ class VectorProjectionWriter:
                     "source_file": f"commit:chapter_{evt_chapter:03d}",
                 })
 
-        for delta in commit_payload.get("entity_deltas") or []:
+        for delta in extraction_list(commit_payload, "entity_deltas"):
             if not isinstance(delta, dict):
                 continue
             text = self._delta_to_text(delta)
@@ -94,7 +96,7 @@ class VectorProjectionWriter:
                     "source_file": f"commit:chapter_{d_chapter:03d}",
                 })
 
-        for idx, scene in enumerate(commit_payload.get("scenes") or [], start=1):
+        for idx, scene in enumerate(extraction_list(commit_payload, "scenes"), start=1):
             if not isinstance(scene, dict):
                 continue
             scene_index = int(scene.get("scene_index") or scene.get("index") or idx)

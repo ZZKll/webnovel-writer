@@ -203,6 +203,8 @@ def test_review_schema_consistency():
     assert schema_fields, "无法从 review_schema.py 提取字段"
     extra = issue_fields_in_prompt - schema_fields
     assert not extra, f"reviewer.md 中有字段不在 review_schema.py 中: {extra}"
+    assert "blocking_count" in reviewer_text
+    assert "issues_count" in reviewer_text
 
 
 # ---------------------------------------------------------------------------
@@ -341,6 +343,13 @@ def test_data_agent_is_described_as_extraction_only_not_direct_write_mainline():
     assert "event_type" in text
     assert "subject" in text
     assert "直接写入 index.db 和 state.json" not in text
+    for forbidden in (
+        "RAG 向量索引",
+        "observability",
+        "场景索引已写入",
+        "索引失败",
+    ):
+        assert forbidden not in text, f"data-agent.md 不应保留 projection 写入语义: {forbidden}"
     # data-agent 不得携带可运行的 chapter-commit 命令（commit 是主流程的事实提交入口，data-agent 只产 artifact）
     assert not re.search(r"webnovel\.py[^\n]+chapter-commit", text), (
         "data-agent.md 不应出现可运行的 webnovel.py ... chapter-commit 命令"

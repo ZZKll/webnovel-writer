@@ -15,11 +15,29 @@ from data_modules.summary_projection_writer import SummaryProjectionWriter
 from data_modules.vector_projection_writer import VectorProjectionWriter
 
 
+def _commit_payload(*, chapter=3, status="accepted", **extraction):
+    extraction_payload = {
+        "accepted_events": [],
+        "state_deltas": [],
+        "entity_deltas": [],
+        "entities_appeared": [],
+        "scenes": [],
+        "chapter_meta": {},
+        "dominant_strand": "",
+        "summary_text": "",
+    }
+    extraction_payload.update(extraction)
+    return {
+        "meta": {"status": status, "chapter": chapter},
+        "extraction_result": extraction_payload,
+    }
+
+
 def test_state_projection_writer_handles_rejected_commit(tmp_path):
     (tmp_path / ".webnovel").mkdir(parents=True, exist_ok=True)
     (tmp_path / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
     writer = StateProjectionWriter(tmp_path)
-    result = writer.apply({"meta": {"status": "rejected", "chapter": 3}, "state_deltas": []})
+    result = writer.apply(_commit_payload(status="rejected"))
     assert result["applied"] is True
     state = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
     assert state["progress"]["chapter_status"]["3"] == "chapter_rejected"
@@ -30,10 +48,7 @@ def test_state_projection_writer_applies_accepted_commit(tmp_path):
     (tmp_path / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
     writer = StateProjectionWriter(tmp_path)
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [{"entity_id": "x", "field": "realm", "new": "斗者"}],
-        }
+        _commit_payload(state_deltas=[{"entity_id": "x", "field": "realm", "new": "斗者"}])
     )
     assert result["applied"] is True
     payload = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
@@ -89,11 +104,7 @@ def test_reapplying_accepted_chapter_commit_does_not_double_count_words(tmp_path
     chapters_dir.mkdir(parents=True, exist_ok=True)
     (chapters_dir / "第0001章.md").write_text("第一章正文内容", encoding="utf-8")
 
-    payload = {
-        "meta": {"status": "accepted", "chapter": 1},
-        "state_deltas": [],
-        "accepted_events": [],
-    }
+    payload = _commit_payload(chapter=1)
     writer = StateProjectionWriter(tmp_path)
     writer.apply(payload)
     first_state = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
@@ -111,10 +122,8 @@ def test_state_projection_writer_derives_delta_from_power_breakthrough_event(tmp
     (tmp_path / ".webnovel" / "state.json").write_text("{}", encoding="utf-8")
     writer = StateProjectionWriter(tmp_path)
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [],
-            "accepted_events": [
+        _commit_payload(
+            accepted_events=[
                 {
                     "event_id": "evt-001",
                     "chapter": 3,
@@ -123,7 +132,7 @@ def test_state_projection_writer_derives_delta_from_power_breakthrough_event(tmp
                     "payload": {"from": "斗者", "to": "斗师"},
                 }
             ],
-        }
+        )
     )
 
     payload = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
@@ -137,20 +146,10 @@ def test_state_projection_writer_updates_strand_tracker(tmp_path):
     writer = StateProjectionWriter(tmp_path)
 
     writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [],
-            "accepted_events": [],
-            "dominant_strand": "quest",
-        }
+        _commit_payload(chapter=3, dominant_strand="quest")
     )
     writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 4},
-            "state_deltas": [],
-            "accepted_events": [],
-            "dominant_strand": "quest",
-        }
+        _commit_payload(chapter=4, dominant_strand="quest")
     )
 
     payload = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
@@ -167,20 +166,10 @@ def test_state_projection_writer_reapplying_chapter_replaces_strand(tmp_path):
     writer = StateProjectionWriter(tmp_path)
 
     writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [],
-            "accepted_events": [],
-            "dominant_strand": "quest",
-        }
+        _commit_payload(chapter=3, dominant_strand="quest")
     )
     writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [],
-            "accepted_events": [],
-            "dominant_strand": "fire",
-        }
+        _commit_payload(chapter=3, dominant_strand="fire")
     )
 
     payload = json.loads((tmp_path / ".webnovel" / "state.json").read_text(encoding="utf-8"))
@@ -215,9 +204,8 @@ def test_index_projection_writer_applies_entity_delta(tmp_path):
     writer = IndexProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "entity_deltas": [
+        _commit_payload(
+            entity_deltas=[
                 {
                     "entity_id": "xiaoyan",
                     "canonical_name": "萧炎",
@@ -226,7 +214,7 @@ def test_index_projection_writer_applies_entity_delta(tmp_path):
                     "chapter": 3,
                 }
             ],
-        }
+        )
     )
 
     entity = IndexManager(cfg).get_entity("xiaoyan")
@@ -241,9 +229,9 @@ def test_index_projection_writer_registers_stable_protagonist_aliases(tmp_path):
     writer = IndexProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 1},
-            "entity_deltas": [
+        _commit_payload(
+            chapter=1,
+            entity_deltas=[
                 {
                     "entity_id": "lu_ming",
                     "canonical_name": "陆鸣",
@@ -253,7 +241,7 @@ def test_index_projection_writer_registers_stable_protagonist_aliases(tmp_path):
                     "is_protagonist": True,
                 }
             ],
-        }
+        )
     )
 
     manager = IndexManager(cfg)
@@ -302,10 +290,8 @@ def test_index_projection_writer_derives_relationship_from_event(tmp_path):
     writer = IndexProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "entity_deltas": [],
-            "accepted_events": [
+        _commit_payload(
+            accepted_events=[
                 {
                     "event_id": "evt-001",
                     "chapter": 3,
@@ -318,7 +304,7 @@ def test_index_projection_writer_derives_relationship_from_event(tmp_path):
                     },
                 }
             ],
-        }
+        )
     )
 
     rels = IndexManager(cfg).get_relationship_between("xiaoyan", "yaolao")
@@ -332,10 +318,8 @@ def test_index_projection_writer_derives_artifact_entity_from_event(tmp_path):
     writer = IndexProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "entity_deltas": [],
-            "accepted_events": [
+        _commit_payload(
+            accepted_events=[
                 {
                     "event_id": "evt-002",
                     "chapter": 3,
@@ -348,7 +332,7 @@ def test_index_projection_writer_derives_artifact_entity_from_event(tmp_path):
                     },
                 }
             ],
-        }
+        )
     )
 
     entity = IndexManager(cfg).get_entity("black_ring")
@@ -461,11 +445,8 @@ def test_index_projection_writer_records_state_change_from_event(tmp_path):
     writer = IndexProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [],
-            "entity_deltas": [],
-            "accepted_events": [
+        _commit_payload(
+            accepted_events=[
                 {
                     "event_id": "evt-001",
                     "chapter": 3,
@@ -474,7 +455,7 @@ def test_index_projection_writer_records_state_change_from_event(tmp_path):
                     "payload": {"field": "mood", "old": "躁动", "new": "冷静"},
                 }
             ],
-        }
+        )
     )
 
     changes = IndexManager(cfg).get_chapter_state_changes(3)
@@ -490,10 +471,7 @@ def test_summary_projection_writer_writes_summary_markdown(tmp_path):
     writer = SummaryProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "summary_text": "本章主角发现陷阱并决定隐忍。",
-        }
+        _commit_payload(summary_text="本章主角发现陷阱并决定隐忍。")
     )
 
     summary_path = tmp_path / ".webnovel" / "summaries" / "ch0003.md"
@@ -506,10 +484,7 @@ def test_summary_projection_writer_replay_overwrites_not_appends(tmp_path):
     cfg = DataModulesConfig.from_project_root(tmp_path)
     cfg.ensure_dirs()
     writer = SummaryProjectionWriter(tmp_path)
-    payload = {
-        "meta": {"status": "accepted", "chapter": 3},
-        "summary_text": "本章主角发现陷阱并决定隐忍。",
-    }
+    payload = _commit_payload(summary_text="本章主角发现陷阱并决定隐忍。")
 
     writer.apply(payload)
     writer.apply(payload)
@@ -525,14 +500,11 @@ def test_memory_projection_writer_maps_commit_into_scratchpad(tmp_path):
     writer = MemoryProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [
+        _commit_payload(
+            state_deltas=[
                 {"entity_id": "xiaoyan", "field": "realm", "old": "斗者", "new": "斗师"}
             ],
-            "entity_deltas": [],
-            "accepted_events": [],
-        }
+        )
     )
 
     store = ScratchpadManager(cfg)
@@ -545,14 +517,11 @@ def test_memory_projection_writer_is_idempotent_for_replay(tmp_path):
     cfg = DataModulesConfig.from_project_root(tmp_path)
     cfg.ensure_dirs()
     writer = MemoryProjectionWriter(tmp_path)
-    payload = {
-        "meta": {"status": "accepted", "chapter": 3},
-        "state_deltas": [
+    payload = _commit_payload(
+        state_deltas=[
             {"entity_id": "xiaoyan", "field": "realm", "old": "斗者", "new": "斗师"}
         ],
-        "entity_deltas": [],
-        "accepted_events": [],
-    }
+    )
 
     writer.apply(payload)
     writer.apply(payload)
@@ -577,10 +546,9 @@ def test_vector_projection_writer_is_idempotent_for_replay(tmp_path, monkeypatch
     cfg = DataModulesConfig.from_project_root(tmp_path)
     cfg.ensure_dirs()
     writer = VectorProjectionWriter(tmp_path)
-    payload = {
-        "meta": {"status": "accepted", "chapter": 3},
-        "summary_text": "本章主角发现陷阱并决定隐忍。",
-        "entity_deltas": [
+    payload = _commit_payload(
+        summary_text="本章主角发现陷阱并决定隐忍。",
+        entity_deltas=[
             {
                 "entity_id": "xiaoyan",
                 "canonical_name": "萧炎",
@@ -588,7 +556,7 @@ def test_vector_projection_writer_is_idempotent_for_replay(tmp_path, monkeypatch
                 "chapter": 3,
             }
         ],
-        "accepted_events": [
+        accepted_events=[
             {
                 "event_id": "evt-power-3",
                 "chapter": 3,
@@ -597,14 +565,14 @@ def test_vector_projection_writer_is_idempotent_for_replay(tmp_path, monkeypatch
                 "payload": {"to": "斗师"},
             }
         ],
-        "scenes": [
+        scenes=[
             {
                 "index": 1,
                 "location": "山门",
                 "summary": "萧炎完成突破",
             }
         ],
-    }
+    )
 
     writer.apply(payload)
     writer.apply(payload)
@@ -625,11 +593,8 @@ def test_memory_projection_writer_maps_open_loop_event_into_scratchpad(tmp_path)
     writer = MemoryProjectionWriter(tmp_path)
 
     result = writer.apply(
-        {
-            "meta": {"status": "accepted", "chapter": 3},
-            "state_deltas": [],
-            "entity_deltas": [],
-            "accepted_events": [
+        _commit_payload(
+            accepted_events=[
                 {
                     "event_id": "evt-001",
                     "chapter": 3,
@@ -638,7 +603,7 @@ def test_memory_projection_writer_maps_open_loop_event_into_scratchpad(tmp_path)
                     "payload": {"content": "三年之约"},
                 }
             ],
-        }
+        )
     )
 
     store = ScratchpadManager(cfg)

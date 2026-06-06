@@ -151,10 +151,16 @@ def build_review_artifacts(
     result = parse_review_output(chapter=chapter, raw=raw)
     anti_patterns_added = append_ai_flavor_anti_patterns(project_root, result)
     metrics = result.to_metrics_dict(report_file=report_file)
+    normalized_review = result.to_dict()
+    review_results_path.parent.mkdir(parents=True, exist_ok=True)
+    review_results_path.write_text(
+        json.dumps(normalized_review, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     return {
         "chapter": chapter,
-        "review_result": result.to_dict(),
+        "review_result": normalized_review,
         "metrics": metrics,
         "anti_patterns_added": anti_patterns_added,
     }

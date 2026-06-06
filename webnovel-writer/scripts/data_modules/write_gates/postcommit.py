@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..artifact_validator import validate_chapter_commit
+from ..artifact_validator import OK_PROJECTION_STATUSES, REQUIRED_PROJECTION_WRITERS
 from ..config import DataModulesConfig
 from ..project_phase import resolve_project_phase
 from ..projection_log import latest_projection_run, projection_status_from_run
@@ -74,9 +75,20 @@ def run_postcommit_gate(project_root: Path, chapter: int) -> dict:
         payload,
     )
     if isinstance(projection_status, dict):
-        for writer, writer_status in projection_status.items():
-            status_text = str(writer_status)
-            if projection_source == "projection_log" and status_text.startswith("failed"):
+        for writer in REQUIRED_PROJECTION_WRITERS:
+            status_text = str(projection_status.get(writer) or "").strip()
+            if not status_text:
+                errors.append(
+                    issue(
+                        "projection_status_missing",
+                        message=f"projection {writer} status missing",
+                        path=str(commit_path),
+                        impact="postcommit 必须确认 state/index/summary/memory/vector 五项投影状态。",
+                        repair="重新执行 chapter-commit 或补跑 projection retry/replay。",
+                        details={"source": projection_source},
+                    )
+                )
+            elif status_text.startswith("failed"):
                 errors.append(
                     issue(
                         "projection_failure",
@@ -95,6 +107,16 @@ def run_postcommit_gate(project_root: Path, chapter: int) -> dict:
                         path=str(commit_path),
                         impact="read-model 还没有确认写入完成。",
                         repair="重新运行 chapter-commit 或后续 projection retry/replay。",
+                    )
+                )
+            elif status_text not in OK_PROJECTION_STATUSES:
+                errors.append(
+                    issue(
+                        "projection_status_invalid",
+                        message=f"projection {writer} status is {status_text}",
+                        path=str(commit_path),
+                        impact="postcommit 只接受 projection 状态 done 或 skipped。",
+                        repair="等待投影完成或补跑 projection retry/replay。",
                     )
                 )
 

@@ -92,10 +92,11 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" ind
 
 ## 7. 输出格式
 
-严格按以下 JSON 格式输出（无其他文本）：
+严格按以下 JSON 格式输出（无其他文本）。`issues_count`、`blocking_count`、`has_blocking` 必须与 `issues` 一致；review-pipeline 会复核并覆盖写回标准 artifact。
 
 ```json
 {
+  "chapter": 100,
   "issues": [
     {
       "severity": "critical | high | medium | low",
@@ -107,6 +108,9 @@ python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" ind
       "blocking": true
     }
   ],
+  "issues_count": 1,
+  "blocking_count": 1,
+  "has_blocking": true,
   "dimension_results": [
     {"dimension": "setting", "conclusion": "pass"},
     {"dimension": "timeline", "conclusion": "发现1个问题：上章黄昏→本章晨光，无时间流逝交代"},

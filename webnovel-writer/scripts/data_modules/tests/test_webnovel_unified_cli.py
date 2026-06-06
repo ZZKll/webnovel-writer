@@ -667,6 +667,12 @@ def test_review_pipeline_builds_artifacts(tmp_path):
     assert payload["metrics"]["overall_score"] < 100
     assert payload["metrics"]["report_file"] == "审查报告/第20章.md"
 
+    persisted_review = json.loads(review_results_path.read_text(encoding="utf-8"))
+    assert persisted_review["chapter"] == 20
+    assert persisted_review["issues_count"] == 2
+    assert persisted_review["blocking_count"] == 1
+    assert persisted_review["has_blocking"] is True
+
 
 def test_review_pipeline_forwards_with_resolved_project_root(monkeypatch, tmp_path):
     module = _load_webnovel_module()
@@ -859,6 +865,12 @@ def test_review_pipeline_main_creates_output_directories(tmp_path):
     assert "# 第9章审查报告" in report_text
     assert "小问题" in report_text
     assert "## 其他问题" in report_text
+
+    persisted_review = json.loads(review_results_path.read_text(encoding="utf-8"))
+    assert persisted_review["chapter"] == 9
+    assert persisted_review["issues_count"] == 1
+    assert persisted_review["blocking_count"] == 0
+    assert persisted_review["has_blocking"] is False
 
     import sqlite3
 

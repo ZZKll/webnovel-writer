@@ -215,6 +215,49 @@ def test_postcommit_gate_prefers_projection_log_failure(tmp_path):
     assert report["details"]["projection_source"] == "projection_log"
 
 
+def test_postcommit_gate_requires_five_projection_statuses_from_projection_log(tmp_path):
+    _make_init_ready(tmp_path)
+    commit_payload = {
+        "meta": {"chapter": 1, "status": "accepted"},
+        "review_result": {"blocking_count": 0},
+        "fulfillment_result": {
+            "planned_nodes": [],
+            "covered_nodes": [],
+            "missed_nodes": [],
+            "extra_nodes": [],
+        },
+        "disambiguation_result": {"pending": []},
+        "extraction_result": {
+            "accepted_events": [],
+            "state_deltas": [],
+            "entity_deltas": [],
+            "summary_text": "摘要",
+        },
+        "projection_status": {
+            "state": "done",
+            "index": "done",
+            "summary": "skipped",
+            "memory": "skipped",
+            "vector": "done",
+        },
+    }
+    commit_path = tmp_path / ".story-system" / "commits" / "chapter_001.commit.json"
+    _write_json(commit_path, commit_payload)
+    append_projection_run(
+        tmp_path,
+        commit_payload,
+        {"vector": {"status": "done"}},
+        commit_path=commit_path,
+    )
+
+    report = run_write_gate(tmp_path, chapter=1, stage="postcommit")
+
+    assert report["ok"] is False
+    assert report["details"]["projection_source"] == "projection_log"
+    assert any(item["code"] == "projection_status_missing" for item in report["errors"])
+    assert any("state" in item["message"] for item in report["errors"])
+
+
 def test_postcommit_gate_accepts_done_or_skipped_projection(tmp_path):
     _make_init_ready(tmp_path)
     _write_json(
@@ -235,7 +278,13 @@ def test_postcommit_gate_accepts_done_or_skipped_projection(tmp_path):
                 "entity_deltas": [],
                 "summary_text": "摘要",
             },
-            "projection_status": {"state": "done", "index": "skipped", "summary": "skipped", "memory": "skipped"},
+            "projection_status": {
+                "state": "done",
+                "index": "skipped",
+                "summary": "skipped",
+                "memory": "skipped",
+                "vector": "skipped",
+            },
         },
     )
 

@@ -21,6 +21,7 @@ from data_modules.artifact_validator import (  # noqa: E402
     ERROR_MISSING,
     ERROR_PENDING_DISAMBIGUATION,
     ERROR_PROJECTION_FAILURE,
+    ERROR_PROJECTION_INCOMPLETE,
     ERROR_SCHEMA,
     validate_chapter_commit,
     validate_commit_artifact_files,
@@ -159,6 +160,44 @@ def test_validate_chapter_commit_reports_projection_failure(tmp_path):
 
     assert report["ok"] is False
     assert any(item["type"] == ERROR_PROJECTION_FAILURE for item in report["errors"])
+
+
+def test_validate_chapter_commit_requires_all_projection_writers(tmp_path):
+    commit = _write_json(
+        tmp_path / "chapter_001.commit.json",
+        {
+            "meta": {"chapter": 1, "status": "accepted"},
+            "review_result": {"blocking_count": 0},
+            "fulfillment_result": {
+                "planned_nodes": [],
+                "covered_nodes": [],
+                "missed_nodes": [],
+                "extra_nodes": [],
+            },
+            "disambiguation_result": {"pending": []},
+            "extraction_result": {
+                "accepted_events": [],
+                "state_deltas": [],
+                "entity_deltas": [],
+                "summary_text": "摘要",
+            },
+            "projection_status": {
+                "state": "done",
+                "index": "done",
+                "summary": "done",
+                "memory": "skipped",
+            },
+        },
+    )
+
+    report = validate_chapter_commit(commit)
+
+    assert report["ok"] is False
+    incomplete = [
+        item for item in report["errors"] if item["type"] == ERROR_PROJECTION_INCOMPLETE
+    ]
+    assert incomplete
+    assert any("vector" in item["message"] for item in incomplete)
 
 
 def test_artifact_validator_rejects_missing_required_top_level_fields(tmp_path):
