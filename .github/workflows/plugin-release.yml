@@ -4,11 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Plugin version to release, for example 5.5.4'
-        required: true
-        type: string
-      release_notes:
-        description: 'Release notes used in GitHub Release'
+        description: 'Plugin version to release, for example 6.2.0'
         required: true
         type: string
 
@@ -20,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_VERSION: ${{ inputs.version }}
-      RELEASE_NOTES: ${{ inputs.release_notes }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,6 +33,14 @@ jobs:
             --check \
             --expected-version "$RELEASE_VERSION"
 
+      - name: Validate release notes
+        run: |
+          python webnovel-writer/scripts/validate_release_notes.py \
+            --version "$RELEASE_VERSION"
+
+      - name: Validate plugin package
+        run: python webnovel-writer/scripts/validate_plugin_package.py
+
       - name: Create and push tag
         run: |
           if git rev-parse "v$RELEASE_VERSION" >/dev/null 2>&1; then
@@ -53,4 +56,4 @@ jobs:
         with:
           tag_name: v${{ inputs.version }}
           name: v${{ inputs.version }}
-          body: ${{ inputs.release_notes }}
+          body_path: releases/v${{ inputs.version }}.md
