@@ -33,6 +33,20 @@ AUTHOR_REPORT_SKILLS = (
     "webnovel-write",
     "webnovel-review",
 )
+SUBAGENT_RUN_FIELDS = (
+    '"status": "completed | partial | failed | skipped"',
+    '"problems": []',
+    '"auto_handled": []',
+    '"needs_user_action": false',
+    '"duration_ms": 0',
+    '"outputs": []',
+)
+SUBAGENT_PROMPT_FILES = (
+    "context-agent.md",
+    "reviewer.md",
+    "data-agent.md",
+    "deconstruction-agent.md",
+)
 
 # webnovel.py 注册的子命令（从 add_parser 提取）
 REGISTERED_CLI_SUBCOMMANDS = {
@@ -345,6 +359,47 @@ def test_review_skill_final_report_covers_metrics_and_blocking_decision():
         assert required in text
     assert "有 blocking 问题且用户未选择处理策略" in text
     assert "最终状态为“需要你处理”" in text
+
+
+def test_main_skills_record_subagent_run_summaries_for_agent_calls():
+    """主 Skill 调用 Agent 后必须记录 SubagentRun 汇总，供最终报告使用。"""
+    expected = {
+        "webnovel-init": ("deconstruction-agent",),
+        "webnovel-write": ("context-agent", "reviewer", "data-agent"),
+        "webnovel-review": ("reviewer",),
+    }
+
+    for skill_name, agents in expected.items():
+        text = _read_text(SKILLS_DIR / skill_name / "SKILL.md")
+        assert "SubagentRun" in text, f"{skill_name}: 缺少 SubagentRun 汇总契约"
+        for field in SUBAGENT_RUN_FIELDS:
+            assert field in text, f"{skill_name}: 缺少 SubagentRun 字段 {field}"
+        for agent_name in agents:
+            assert f'"name": "{agent_name}"' in text, (
+                f"{skill_name}: 缺少 {agent_name} 的 SubagentRun name"
+            )
+    plan_text = _read_text(SKILLS_DIR / "webnovel-plan" / "SKILL.md")
+    assert "SubagentRun" not in plan_text, "webnovel-plan 当前不调用 Agent，不应虚构 SubagentRun"
+
+
+@pytest.mark.parametrize("agent_file_name", SUBAGENT_PROMPT_FILES)
+def test_agents_expose_subagent_run_summary_signals_without_changing_outputs(agent_file_name: str):
+    """Agent prompt 必须暴露可汇总信号，但不得把 SubagentRun 写入原始产物。"""
+    text = _read_text(AGENTS_DIR / agent_file_name)
+
+    assert "SubagentRun 可汇总信号" in text
+    for field in ("`status`", "`problems`", "`auto_handled`", "`needs_user_action`", "`duration_ms`", "`outputs`"):
+        assert field in text, f"{agent_file_name}: 缺少可汇总字段 {field}"
+    assert "主流程" in text and "记录" in text
+
+    if agent_file_name == "reviewer.md":
+        assert "不要把 `SubagentRun` 写进 reviewer JSON" in text
+    elif agent_file_name == "data-agent.md":
+        assert "不要把 `SubagentRun` 写进三份 artifact" in text
+    elif agent_file_name == "deconstruction-agent.md":
+        assert "不要把 `SubagentRun` 写进 `init_reference_research` 顶层" in text
+    elif agent_file_name == "context-agent.md":
+        assert "不要把 `SubagentRun` JSON 写入任务书" in text
 
 
 def test_story_system_runtime_contract_commands_exist():

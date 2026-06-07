@@ -96,6 +96,23 @@ Task:
 
 产物：一份写作任务书，能独立支撑 Step 2 起草。
 
+调用后主流程必须记录 `SubagentRun` 汇总（仅供最终报告使用）：
+
+```json
+{
+  "name": "context-agent",
+  "user_label": "整理写作依据",
+  "status": "completed | partial | failed | skipped",
+  "problems": [],
+  "auto_handled": [],
+  "needs_user_action": false,
+  "duration_ms": 0,
+  "outputs": []
+}
+```
+
+上下文不足、legacy fallback、伏笔数据缺失、任务书不完整或耗时异常，必须写入 `problems` / `auto_handled`，不得在最终报告中静默。
+
 ### Step 2：起草正文
 
 只根据任务书起草。不加载 core-constraints/anti-ai-guide（已内化到任务书）。只输出纯正文，无占位符。有结构化节点时围绕 CBN→CPNs→CEN 展开。中文思维写作。
@@ -115,6 +132,23 @@ Task:
 - 不评分、不口头总结。
 
 reviewer 只返回 JSON；主流程负责用 `Write` 把返回的 JSON 写入 `${PROJECT_ROOT}/.webnovel/tmp/review_results.json`（reviewer 不持 Write，是这份 artifact 的非写入方）。随后必须运行 review-pipeline；review-pipeline 会把同一路径覆盖为标准 review_result artifact（含 `blocking_count`），供 precommit gate 与后续提交命令使用。
+
+调用后主流程必须记录 `SubagentRun` 汇总（仅供最终报告使用）：
+
+```json
+{
+  "name": "reviewer",
+  "user_label": "写作检查",
+  "status": "completed | partial | failed | skipped",
+  "problems": [],
+  "auto_handled": [],
+  "needs_user_action": false,
+  "duration_ms": 0,
+  "outputs": []
+}
+```
+
+reviewer 跳过、失败、输出不完整、`--minimal` 写 no-review artifact、blocking issue、维度跳过或耗时异常，必须写入 `problems` / `auto_handled`，不得在最终报告中静默。
 
 ```bash
 python -X utf8 "${SCRIPTS_DIR}/webnovel.py" --project-root "${PROJECT_ROOT}" review-pipeline \
@@ -159,6 +193,23 @@ Task:
 - 你是这三份 artifact 的唯一写入者；不直接写 state/index/summaries/memory/vectors/projection。
 
 artifact 字段 schema 由 data-agent 自身定义、runtime validator 校验；主流程只检查文件存在与 schema，不重写、不补写、不口头替代。
+
+调用后主流程必须记录 `SubagentRun` 汇总（仅供最终报告使用）：
+
+```json
+{
+  "name": "data-agent",
+  "user_label": "保存本章故事事实",
+  "status": "completed | partial | failed | skipped",
+  "problems": [],
+  "auto_handled": [],
+  "needs_user_action": false,
+  "duration_ms": 0,
+  "outputs": []
+}
+```
+
+三份 artifact 写入状态、schema 不合格、pending 消歧、长时间无进展或输出不完整，必须写入 `problems`；自动重跑或降级处理必须写入 `auto_handled`。
 
 #### 5.2 提交前校验与 CHAPTER_COMMIT
 

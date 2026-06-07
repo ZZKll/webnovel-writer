@@ -76,7 +76,18 @@ load-context 已含（不要重复查）：`story_contracts`（MASTER/volume/cha
 4. **怎么写更顺**：最关键一段。把裁决层风格 / 节奏翻成具体指导；题材基调；`writing_guidance`；`anti_patterns` 翻为自然提醒；审查得分趋势。
 5. **收在哪里**：结尾停在什么感觉，留什么未完感。
 
-## 8. 错误处理
+## 8. SubagentRun 可汇总信号
+
+不要把 `SubagentRun` JSON 写入任务书，也不要额外落盘。主流程会根据本 agent 的返回内容记录：
+
+- `status`：五段任务书完整为 `completed`；使用降级读取但仍可写为 `partial`；无法支撑起草为 `failed`。
+- `problems`：上下文不足、contracts 缺失、伏笔数据缺失、任务书不完整、耗时异常。
+- `auto_handled`：legacy fallback、`extract-context` 降级读取、跳过非阻断结构化节点。
+- `needs_user_action`：上下文严重不足或需要人工补录关键设定时为 true。
+- `duration_ms`：由主流程计时记录。
+- `outputs`：写作任务书。
+
+## 9. 错误处理
 
 | 场景 | 处理 |
 |------|------|

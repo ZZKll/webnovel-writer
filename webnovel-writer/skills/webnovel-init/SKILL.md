@@ -85,6 +85,23 @@ Use the Agent tool to run `webnovel-writer:deconstruction-agent`.
 Prompt: reference_title={reference_title}; reference_source={reference_source}; reference_text_path={reference_text_path}; reference_text_excerpt={reference_text_excerpt}; analysis_mode={quick|deep|auto}; init_goal={当前初始化故事方向或空}; target_genre={题材或空}。只返回 init_reference_research JSON 对象，不写任何文件，不创建目录，不写 .story-system、.webnovel、设定集、大纲、正文、idea_bank.json、state.json 或任何 canon/read model 文件。
 ```
 
+调用后主流程必须记录一份 `SubagentRun` 汇总（仅供最终报告使用，不写入 canon）：
+
+```json
+{
+  "name": "deconstruction-agent",
+  "user_label": "参考作品拆解",
+  "status": "completed | partial | failed | skipped",
+  "problems": [],
+  "auto_handled": [],
+  "needs_user_action": false,
+  "duration_ms": 0,
+  "outputs": []
+}
+```
+
+`quality.passed=false`、`confidence < 0.85`、输入不足、文本不可读、降级 quick mode 或输出不完整时，必须写入 `problems`，并让最终报告进入“建议确认 / 必须处理”。
+
 处理规则：
 - 只有书名/平台、无文本或摘录时，先问能否提供摘录/路径；不能提供则把参考书仅作"方向线索"，不得编造其黄金三章、角色、设定或剧情事实。
 - 接收返回的 `init_reference_research` JSON 后，只使用 `reader_promise`、`opening_hook_patterns`、`cool_point_loops`、`protagonist_patterns`、`antagonist_pressure_patterns`、`pacing_notes`、`borrowable_structures`、`differentiation_requirements`、`init_candidates`、`quality`。

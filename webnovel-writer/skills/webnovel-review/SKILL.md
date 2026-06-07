@@ -73,6 +73,23 @@ Prompt: chapter={chapter_num}; chapter_file={chapter_file}; project_root=${PROJE
 
 reviewer 返回后，主流程把严格 JSON 写入 `${PROJECT_ROOT}/.webnovel/tmp/review_results.json`（reviewer 不持 Write，是这份 artifact 的非写入方）。`review-pipeline` 必须把同一路径覆盖为标准 review_result artifact（含 `blocking_count`）。
 
+调用后主流程必须记录 `SubagentRun` 汇总（仅供最终报告使用）：
+
+```json
+{
+  "name": "reviewer",
+  "user_label": "写作检查",
+  "status": "completed | partial | failed | skipped",
+  "problems": [],
+  "auto_handled": [],
+  "needs_user_action": false,
+  "duration_ms": 0,
+  "outputs": []
+}
+```
+
+reviewer 跳过、失败、输出不完整、正文为空、维度跳过、blocking issue 或耗时异常，必须写入 `problems` / `auto_handled`，不得在最终报告中静默。
+
 ### Step 6：生成报告并落库
 
 ```bash
