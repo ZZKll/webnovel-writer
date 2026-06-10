@@ -85,9 +85,9 @@ def rollback(self, chapter: int) -> bool:
 - Modify: `webnovel-writer/scripts/init_project.py:294-300,366`
 - Test: `webnovel-writer/scripts/data_modules/tests/test_init_project_pruning.py`
 
-- [ ] **Step 1: 写测试**：项目里放一个非法 JSON 的 state.json，重跑 init，断言 (a) 生成 `state.corrupt_*.json` 副本且内容等于原损坏文本；(b) 输出包含警告。
-- [ ] **Step 2: 实现**：捕获 `json.JSONDecodeError` 时先 `shutil.copy2(state_path, state_path.with_name(f"state.corrupt_{ts}.json"))` 再重建，打印"⚠️ 原 state.json 已损坏，已另存为 ... 供手工抢救"。
-- [ ] **Step 3: 提交** `fix: preserve corrupt state.json before rebuilding`。
+- [x] **Step 1: 写测试**：项目里放一个非法 JSON 的 state.json，重跑 init，断言 (a) 生成 `state.corrupt_*.json` 副本且内容等于原损坏文本；(b) 输出包含警告。
+- [x] **Step 2: 实现**：捕获 `json.JSONDecodeError` 时先 `shutil.copy2(state_path, state_path.with_name(f"state.corrupt_{ts}.json"))` 再重建，打印"⚠️ 原 state.json 已损坏，已另存为 ... 供手工抢救"。
+- [x] **Step 3: 提交** `fix: preserve corrupt state.json before rebuilding`。
 
 ### Task 5: 迁移脚本带错不精简、写回原子化
 
